@@ -1,62 +1,56 @@
-import { PaymentsOverview } from "@/components/Charts/payments-overview";
-import { UsedDevices } from "@/components/Charts/used-devices";
-import { WeeksProfit } from "@/components/Charts/weeks-profit";
-import { TopChannels } from "@/components/Tables/top-channels";
-import { TopChannelsSkeleton } from "@/components/Tables/top-channels/skeleton";
-import { createTimeFrameExtractor } from "@/utils/timeframe-extractor";
-import { Suspense } from "react";
-import { ChatsCard } from "./_components/chats-card";
-import { OverviewCardsGroup } from "./_components/overview-cards";
-import { OverviewCardsSkeleton } from "./_components/overview-cards/skeleton";
-import { RegionLabels } from "./_components/region-labels";
+import { prisma } from '@/lib/prisma';
+import Link from 'next/link';
+import { Card, CardHeader, CardContent, CardFooter } from '@/components/ui/card';
 
-type PropsType = {
-  searchParams: Promise<{
-    selected_time_frame?: string;
-  }>;
-};
+// Define Match type based on Prisma schema
+interface Match {
+  id: number;
+  homeTeam: string;
+  awayTeam: string;
+  league: string;
+  startTime: Date;
+  closingTime: Date;
+  prizeBase: number;
+  paidEntries: number;
+  status: string;
+  actualStats?: any; // Json type
+}
 
-export default async function Home({ searchParams }: PropsType) {
-  const { selected_time_frame } = await searchParams;
-  const extractTimeFrame = createTimeFrameExtractor(selected_time_frame);
+export default async function Home() {
+  // Type matches using custom Match interface
+  const matches: Match[] = await prisma.match.findMany({
+    where: { status: 'active' },
+    take: 2,
+  });
+  const questionLabels = [
+    'Goals by Home Team in 1st Half',
+    'Goals by Away Team in 1st Half',
+    'Total Goals in 1st Half',
+    'Goals by Home Team in 2nd Half',
+    'Goals by Away Team in 2nd Half',
+    'Total Goals in 2nd Half',
+  ];
 
   return (
-    <>
-      <Suspense fallback={<OverviewCardsSkeleton />}>
-        <OverviewCardsGroup />
-      </Suspense>
-
-      <div className="mt-4 grid grid-cols-12 gap-4 md:mt-6 md:gap-6 2xl:mt-9 2xl:gap-7.5">
-        <PaymentsOverview
-          className="col-span-12 xl:col-span-7"
-          key={extractTimeFrame("payments_overview")}
-          timeFrame={extractTimeFrame("payments_overview")?.split(":")[1]}
-        />
-
-        <WeeksProfit
-          key={extractTimeFrame("weeks_profit")}
-          timeFrame={extractTimeFrame("weeks_profit")?.split(":")[1]}
-          className="col-span-12 xl:col-span-5"
-        />
-
-        <UsedDevices
-          className="col-span-12 xl:col-span-5"
-          key={extractTimeFrame("used_devices")}
-          timeFrame={extractTimeFrame("used_devices")?.split(":")[1]}
-        />
-
-        <RegionLabels />
-
-        <div className="col-span-12 grid xl:col-span-8">
-          <Suspense fallback={<TopChannelsSkeleton />}>
-            <TopChannels />
-          </Suspense>
-        </div>
-
-        <Suspense fallback={null}>
-          <ChatsCard />
-        </Suspense>
-      </div>
-    </>
+    <div className="container mx-auto p-4">
+      <h1 className="text-3xl font-bold text-gray-800 mb-8">Playdiski</h1>
+      <nav className="flex gap-4 mb-8">
+        <Link href="/about" className="text-blue-600 hover:underline">About Us</Link>
+        <Link href="/how-it-works" className="text-blue-600 hover:underline">How it Works</Link>
+        <Link href="/faqs" className="text-blue-600 hover:underline">FAQs</Link>
+        <Link href="/results" className="text-blue-600 hover:underline">Results</Link>
+      </nav>
+      {matches.map((match) => (
+        <Card key={match.id}>
+          <CardHeader title={`${match.homeTeam} vs ${match.awayTeam}`} league={match.league} />
+          <CardContent
+            prize={match.prizeBase + match.paidEntries * 5}
+            closingTime={match.closingTime.toLocaleString()}
+            questions={questionLabels}
+          />
+          <CardFooter matchId={match.id} />
+        </Card>
+      ))}
+    </div>
   );
 }

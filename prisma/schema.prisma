@@ -1,0 +1,52 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+// generator client {
+// provider = "prisma-client-js"
+// output   = "../src/generated/prisma"
+// }
+
+generator client {
+  provider = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+
+// new code
+
+
+model Match {
+  id          Int      @id @default(autoincrement())
+  homeTeam    String
+  awayTeam    String
+  league      String
+  startTime   DateTime
+  closingTime DateTime
+  prizeBase   Int      @default(1000)
+  paidEntries Int      @default(0)
+  status      String   @default("active")
+  actualStats Json?
+  entries     Entry[]
+}
+
+model Entry {
+  id            Int      @id @default(autoincrement())
+  matchId       Int
+  name          String
+  surname       String
+  email         String
+  optionalEmail String?
+  phone         String
+  answers       Json
+  isPaid        Boolean  @default(false)
+  paymentId     String?
+  createdAt     DateTime @default(now())
+  match         Match    @relation(fields: [matchId], references: [id])
+}
