@@ -1,5 +1,6 @@
 // src/types.ts
 export interface Fixture {
+  closingTime: string | number | Date;
   id: number;
   homeTeam: string;
   awayTeam: string;

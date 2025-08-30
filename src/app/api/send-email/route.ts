@@ -2,17 +2,17 @@
 import { NextResponse } from 'next/server';
 import { Resend } from 'resend';
 import { EntryRecord } from '@/emails/EntryRecord';
-import { error } from 'console';
+import React from 'react'; 
 
 const resend = new Resend(process.env.RESEND_API_KEY!);
 
-export async function POST(req: { json: () => PromiseLike<{ name: any; email: any; answers: any; match: any; }> | { name: any; email: any; answers: any; match: any; }; }) {
+export async function POST(req: Request) {
   const { name, email, answers, match } = await req.json();
   const { data, error } = await resend.emails.send({
-    from: 'Playdiski <noreply@playdiski.com>',
+    from: 'Socafan <noreply@playdiski.com>',
     to: [email],
     subject: 'Your Entry Record',
-    react: <EntryRecord name={name} answers={answers} match={match} />,
+    react: React.createElement(EntryRecord, { name, answers, match }),
   });
   if (error) return NextResponse.json({ error }, { status: 500 });
   return NextResponse.json(data);
